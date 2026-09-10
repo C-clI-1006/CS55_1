@@ -1,0 +1,22 @@
+{
+  "dataset_name": "SolLevante",
+  "final_score": {
+    "integrity": 0.7652635633042364,
+    "completeness": 1.0
+  },
+  "chain_metrics": {
+    "coherence": 0.7652635633042364,
+    "confidence": 0.9499435733149062,
+    "coverage": 0.8714285714285714,
+    "completeness": 1.0
+  },
+  "stage_metrics": {
+    "storyboard_to_animation_similarity": 0.7902917766467833,
+    "animation_to_final_similarity": 0.7402353499616895
+  },
+  "evidence_chain": {
+    "artefact_count": 223,
+    "relationship_count": 222
+  },
+  "note": "Reference values reproduced in the validated Sol Levante notebook run; small floating-point differences are expected."
+}
