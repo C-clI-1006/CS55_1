@@ -1,107 +1,118 @@
-# CS55 Cross-Modal Evidence Chain Demo
+# CS55_1_demo
 
-This package is the runnable CS55 prototype built on top of the project-provided `libevchain` evidence-chain library.
+Runnable CS55-1 cross-modal evidence-chain prototype built **on top of the project-provided `libevchain` framework**.
 
-## What the system does
+## System flow
 
-`Storyboard → Animatic → Final → CLIP embeddings → similarity matrices → sequence-aware dynamic-programming matching → evidence-chain metrics → libevchain Pipeline → JSON outputs`
+`Storyboard → Animatic → Final → CLIP embeddings → cosine similarity → sequence-aware dynamic-programming matching → evidence-chain metrics → libevchain Pipeline → JSON outputs`
 
-The current metrics are:
-- **Integrity / Coherence**: mean of the two stage-level sequence-aware CLIP similarities.
-- **Confidence**: `1 - |Storyboard→Animatic mean - Animatic→Final mean|`, clipped to `[0, 1]`.
-- **Coverage**: average of storyboard→animatic shot coverage and animatic→final coverage.
-- **Completeness**: number of available final keyframes divided by the expected final keyframe count.
-
-## Folder structure
+## Important project structure
 
 ```text
-CS55_Evidence_Chain_Demo/
-├── README.md
+CS55_1_demo/
+├── CS55_1_demo.ipynb        # easiest live-demo entry point
+├── run_demo.py              # command-line entry point
+├── config.sample.json       # packaged sample
+├── config.sollevante.example.json
 ├── requirements.txt
 ├── pyproject.toml
-├── run_demo.py
-├── demo.ipynb
-├── config.sample.json
-├── config.sollevante.example.json
 ├── src/
-│   ├── cs55_demo/          # CS55 application code
-│   └── libevchain/         # project-provided evidence-chain library
+│   ├── cs55_demo/           # CS55-1 implementation
+│   └── libevchain/          # COMP3988-provided source, kept unchanged
 ├── docs/
-│   └── json_format.md
-├── data/
-│   └── sample/             # tiny smoke-test media
-├── cache/                  # generated CLIP embedding cache
-├── outputs/                # generated JSON results
-└── test/                   # original libevchain tests + CS55 smoke test
+├── data/sample/
+├── cache/
+├── outputs/
+└── test/
+```
+
+The separation is intentional: **`libevchain` is the shared evidence-chain framework; `cs55_demo` is the CS55-1 system that uses it.**
+
+## libevchain compatibility
+
+The source files under `src/libevchain/` are copied from the supplied COMP3988 version without source-code edits. The CS55-specific workarounds and custom relationship types live only under `src/cs55_demo/`.
+
+See `docs/LIBEVCHAIN_ORIGINAL.md` for details and source-file hashes.
+
+## Metrics used by this demo
+
+These definitions match the main measurement section in `CS55_CrossModal_Coherence-step 2`:
+
+- **Chain Coherence**: for each complete Storyboard → Animatic → Final chain, average the two relationship similarities; then average across all storyboard chains.
+- **Confidence**: for each chain, `1 - |Storyboard→Animatic similarity - Animatic→Final similarity|`, clipped to `[0, 1]`; then average across chains.
+- **Evidence Coverage**: average of (unique animatic shots used / all animatic shots) and (unique final shots used / all final shots).
+- **Completeness**: each final shot used by the evidence chain is `available = 1.0`; each unused final shot is `partial = 0.5`; then average across expected final shots.
+- **Stage similarities**: mean sequence-aware similarity for Storyboard→Animatic and Animatic→Final separately.
+
+For the validated Sol Levante run, the notebook reported approximately:
+
+```text
+Chain Coherence:              0.7701
+Confidence:                   0.9145
+Evidence Coverage:            0.5972
+Completeness:                 0.7258
+Storyboard → Animatic:        0.7903
+Animatic → Final:             0.7402
+EvidenceChain artefacts:      223
+Evidence relationships:       222
 ```
 
 ## Quick start
 
-From Terminal:
+In Terminal:
 
 ```bash
-cd CS55_Evidence_Chain_Demo
+cd CS55_1_demo
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python run_demo.py --config config.sample.json
 ```
 
-The first run downloads `openai/clip-vit-base-patch32` from Hugging Face and creates an embedding cache. Later runs reuse the cache.
+The first real CLIP run downloads `openai/clip-vit-base-patch32`. Later runs can reuse the embedding cache in `cache/`.
 
-For the live client demo, run the chosen dataset once beforehand so `cache/<dataset>_embeddings.pt` already exists. This avoids relying on network access during the presentation.
-
-## Fast package validation (no CLIP download)
-
-After dependencies are installed, you can check that the package wiring, dynamic-programming matching and libevchain integration work without downloading CLIP:
+## Quick package check without downloading CLIP
 
 ```bash
 PYTHONPATH=src python test/test_cs55_smoke.py
 ```
 
-This test uses a deterministic dummy embedding only for packaging validation. The real demo uses CLIP.
+This uses a deterministic dummy embedder only to verify the package wiring, matching, scoring and `libevchain` integration.
 
-## Run with Sol Levante
+## Jupyter live demo
+
+Open:
+
+```text
+CS55_1_demo.ipynb
+```
+
+The default config is `config.sample.json`. Run the cells from top to bottom.
+
+## Sol Levante demo
 
 1. Copy `config.sollevante.example.json` to `config.sollevante.json`.
-2. Replace `/path/to/SolLevante/...` with the local paths on the demo computer.
-3. Make sure the processed folders contain:
-   - storyboard panel PNGs,
-   - animatic keyframe PNGs,
-   - final keyframe PNGs.
+2. Replace the placeholder paths with paths on the demo computer.
+3. Ensure the processed directories already contain storyboard panel PNGs, animatic keyframe PNGs and final keyframe PNGs.
 4. Run:
 
 ```bash
 python run_demo.py --config config.sollevante.json
 ```
 
-The previously validated Sol Levante pipeline produced approximately:
-
-```text
-Integrity / Coherence: 0.7653
-Confidence:             0.9499
-Coverage:               0.8714
-Completeness:           1.0000
-Storyboard → Animatic:  0.7903
-Animatic → Final:       0.7402
-Artefacts:              223
-Relationships:          222
-```
-
-## Notebook demo
-
-Open `demo.ipynb` and run the cells from top to bottom. It uses relative paths and the packaged `src/` directory, so it does not depend on `/Users/.../COMP3988_Evidence_Chains-master`.
+or set `CONFIG_FILE = "config.sollevante.json"` in `CS55_1_demo.ipynb`.
 
 ## Outputs
 
 Each run writes:
-- `outputs/final_evidence_chain_result.json` — score/metric summary.
-- `outputs/evidence_chain_bundle.json` — the serialised libevchain evidence-chain graph.
 
-## Important note about preprocessing
+```text
+outputs/final_evidence_chain_result.json
+outputs/evidence_chain_bundle.json
+```
 
-This package starts from **already extracted storyboard panels and video keyframes**. The full Sol Levante preprocessing notebooks are separate from this demo package. To use a completely new raw dataset, first extract storyboard panels and keyframes into the three processed directories, then run this package.
+The first file contains the final metrics. The second is the serialised EvidenceChain JSON.
 
-## libevchain integration notes
+## Preprocessing note
 
-`src/libevchain/` is based on the COMP3988 project-provided library. The packaged copy contains only small compatibility/runtime fixes encountered during integration; see `PATCHES.md`.
+This distributable demo starts from already-extracted storyboard panels and video keyframes. For a completely new raw dataset, preprocess the storyboard/video files into the three processed image directories before running the evidence-chain pipeline.

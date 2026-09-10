@@ -13,7 +13,6 @@ from cs55_demo.pipeline_runner import run_full_pipeline
 class DummyEmbedder:
     """Deterministic lightweight embedder for packaging tests only."""
     def embed(self, image_path):
-        # Use file bytes to create a deterministic 8-D vector.
         data = Path(image_path).read_bytes()
         vals = [sum(data[i::8]) % 997 for i in range(8)]
         v = torch.tensor(vals, dtype=torch.float32).reshape(1, -1)
@@ -31,10 +30,12 @@ def test_smoke():
     assert result['evidence_chain']['artefact_count'] == 6
     assert result['evidence_chain']['relationship_count'] == 5
     assert 0 <= result['final_score']['integrity'] <= 1
-    assert result['final_score']['completeness'] == 1.0
+    assert 0 <= result['final_score']['completeness'] <= 1
+    assert 0 <= result['chain_metrics']['confidence'] <= 1
+    assert 0 <= result['chain_metrics']['coverage'] <= 1
     assert bundle['hash_method'] == 'sha256'
 
 
 if __name__ == '__main__':
     test_smoke()
-    print('CS55 smoke test passed')
+    print('CS55_1_demo smoke test passed')

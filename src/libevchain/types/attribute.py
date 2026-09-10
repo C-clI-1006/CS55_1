@@ -85,7 +85,7 @@ def _mk_typecheck_dictof(t_v):
     def _typecheck_fn(o):
         return (
             isinstance(o, dict) and
-            all(t_v(value) for value in o.values())
+            all(t_v(key) for value in o.values())
         )
 
     _typecheck_fn._boundtype = f"dict<{t_v._boundtype}>"

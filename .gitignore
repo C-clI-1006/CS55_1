@@ -2,4 +2,4 @@
 __pycache__/
 *.pyc
 cache/*.pt
-.DS_Store
+config.sollevante.json

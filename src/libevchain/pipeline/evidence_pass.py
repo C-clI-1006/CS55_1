@@ -9,7 +9,7 @@ class EvidencePass():
         An EvidencePass is an evaluation pass that operates on a relationship
     '''
     @staticmethod
-    def evaluate(evidence):
+    def evaluate(self, evidence):
         '''
             produce an evaluation for a given artefact
 

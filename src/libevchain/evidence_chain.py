@@ -27,7 +27,7 @@ class EvidenceChain():
             add a new artefact to the chain
         '''
         if artefact.artefact_hash in self.artefacts:
-            if artefact is not self.artefacts[artefact.artefact_hash]:
+            if artefact is not self.artefacts[artefact]:
                 raise Exception(f"Got multiple artefacts for hash '{artefact.artefact_hash}'")
         else:
             self.artefacts[artefact.artefact_hash] = artefact
@@ -99,7 +99,7 @@ class EvidenceChain():
         file_hash = None
         # attempt to read and hash
         try:
-            with open(file_path, "rb") as f:
+            with open(file_path, "r") as f:
                 file_hash = self.hash_method(f)
         except Exception as e:
             raise Exception(f"Failed to open file '{file_path}': {e}")

@@ -1,18 +1,26 @@
 {
     "dataset_name": "SampleDemo",
     "final_score": {
-        "integrity": 0.9769829511642456,
-        "completeness": 1.0
+        "integrity": 0.9800916910171509,
+        "completeness": 0.625
     },
     "chain_metrics": {
-        "coherence": 0.9769829511642456,
-        "confidence": 0.9800634384155273,
-        "coverage": 0.625,
-        "completeness": 1.0
+        "coherence": 0.9800916910171509,
+        "confidence": 0.9738459587097168,
+        "coverage": 0.25,
+        "completeness": 0.625
     },
     "stage_metrics": {
         "storyboard_to_animation_similarity": 0.9670146703720093,
         "animation_to_final_similarity": 0.9869512319564819
+    },
+    "coverage_breakdown": {
+        "animatic_coverage": 0.25,
+        "final_coverage": 0.25,
+        "used_animatic_shots": 1,
+        "total_animatic_shots": 4,
+        "used_final_shots": 1,
+        "total_final_shots": 4
     },
     "evidence_chain": {
         "artefact_count": 6,

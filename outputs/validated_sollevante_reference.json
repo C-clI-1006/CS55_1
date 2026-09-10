@@ -1,22 +1,16 @@
 {
   "dataset_name": "SolLevante",
-  "final_score": {
-    "integrity": 0.7652635633042364,
-    "completeness": 1.0
-  },
-  "chain_metrics": {
-    "coherence": 0.7652635633042364,
-    "confidence": 0.9499435733149062,
-    "coverage": 0.8714285714285714,
-    "completeness": 1.0
-  },
-  "stage_metrics": {
-    "storyboard_to_animation_similarity": 0.7902917766467833,
-    "animation_to_final_similarity": 0.7402353499616895
+  "source": "CS55_CrossModal_Coherence-step 2 notebook measurement section",
+  "metrics_rounded_4dp": {
+    "coherence": 0.7701,
+    "confidence": 0.9145,
+    "coverage": 0.5972,
+    "completeness": 0.7258,
+    "storyboard_animatic_similarity": 0.7903,
+    "animatic_final_similarity": 0.7402
   },
   "evidence_chain": {
     "artefact_count": 223,
     "relationship_count": 222
-  },
-  "note": "Reference values reproduced in the validated Sol Levante notebook run; small floating-point differences are expected."
+  }
 }

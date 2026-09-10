@@ -81,7 +81,7 @@ class RelationshipType():
 
 
     @staticmethod
-    def attributes():
+    def attributes(self):
         '''
             return a set of strings holding attributes supported
             by this type

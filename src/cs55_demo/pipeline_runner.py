@@ -67,6 +67,14 @@ def run_full_pipeline(config, use_cache=True, cache_path=None, embedder=None):
             'storyboard_to_animation_similarity': metrics['storyboard_animatic_similarity'],
             'animation_to_final_similarity': metrics['animatic_final_similarity'],
         },
+        'coverage_breakdown': {
+            'animatic_coverage': metrics['animatic_coverage'],
+            'final_coverage': metrics['final_coverage'],
+            'used_animatic_shots': metrics['used_animatic_shots'],
+            'total_animatic_shots': metrics['total_animatic_shots'],
+            'used_final_shots': metrics['used_final_shots'],
+            'total_final_shots': metrics['total_final_shots'],
+        },
         'evidence_chain': {
             'artefact_count': len(chain.artefacts),
             'relationship_count': len(list(chain.get_evidence_relationships())),

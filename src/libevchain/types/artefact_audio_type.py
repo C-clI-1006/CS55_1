@@ -25,8 +25,8 @@ class AudioType(ArtefactType):
             # either as a single value or as a list of methods
             'creation_method': Attribute(
                 AttributeTypes.Either(
-                    audio_creation_methods,
-                    AttributeTypes.ListOf(audio_creation_methods),
+                    audio_creation_method,
+                    AttributeTypes.ListOf(audio_creation_method),
                 ), "unknown"
             ),
         }

@@ -1,1 +1,3 @@
-Embedding caches are written here after the first run. For a live demo, generate the cache beforehand so the demo does not depend on network access.
+# Cache
+
+CLIP embedding cache files are created here after the first run. They can be deleted safely; the next run will recompute embeddings.
