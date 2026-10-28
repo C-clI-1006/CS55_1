@@ -2,6 +2,7 @@
 import io
 import json
 import platform
+import shutil
 import subprocess
 import sys
 import threading
@@ -19,11 +20,34 @@ from starlette.concurrency import run_in_threadpool
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / 'src'))
-from cs55_demo.system import load_config, prepare, retrieve, inspect_provenance, apply_reviews, save_json
+from cs55_demo.system import (load_config, prepare, retrieve, inspect_provenance,
+                              apply_reviews, apply_panel_review, save_json)
 from cs55_demo.automatic import validate_ranges
 
 executor = ThreadPoolExecutor(max_workers=1)
 jobs, lock = {}, threading.Lock()
+
+
+def cache_summary(root=None):
+    root = Path(root) if root is not None else ROOT / 'outputs'
+    files = [path for path in root.rglob('*') if path.is_file()] if root.is_dir() else []
+    return dict(bytes=sum(path.stat().st_size for path in files), files=len(files),
+                entries=len(list(root.iterdir())) if root.is_dir() else 0)
+
+
+def clear_generated_cache(root):
+    """Remove generated children of root while preserving root itself."""
+    root = Path(root)
+    before = cache_summary(root)
+    if root.is_dir():
+        for child in root.iterdir():
+            if child.is_dir() and not child.is_symlink():
+                shutil.rmtree(child)
+            else:
+                child.unlink(missing_ok=True)
+    else:
+        root.mkdir(parents=True)
+    return before
 
 
 def read(path, default=None):
@@ -68,12 +92,29 @@ async def bootstrap(request):
     config_path = ROOT / 'config.local.json'
     config = load_config(config_path if config_path.exists() else ROOT / 'config.example.json')
     return JSONResponse(dict(config=config, runs=[dict(id=p.parent.name, created=p.stat().st_mtime,
-        has_results=(p.parent / 'result.json').is_file()) for p in paths], native_picker=platform.system() == 'Darwin'))
+        has_results=(p.parent / 'result.json').is_file()) for p in paths],
+        cache=cache_summary(), native_picker=platform.system() == 'Darwin'))
+
+
+async def clear_cache(request):
+    body = await request.json()
+    if body.get('confirmation') != 'CLEAR_GENERATED_CACHE':
+        raise ValueError('Explicit cache-clear confirmation is required')
+    with lock:
+        if any(job['state'] == 'running' for job in jobs.values()):
+            raise ValueError('Wait for the active processing job to finish before clearing cache')
+    root = ROOT / 'outputs'
+    before = clear_generated_cache(root)
+    with lock:
+        jobs.clear()
+    return JSONResponse(dict(cleared=True, removed_bytes=before['bytes'],
+                             removed_files=before['files'], cache=cache_summary()))
 
 
 async def detail(request):
     run = resolve_run(request.path_params['run_id'])
     return JSONResponse(dict(id=run.name, config=read(run/'config.json'), prepared=read(run/'prepared.json'),
+        panel_manifest=read(run/'panel_manifest.json'),
         result=read(run/'result.json'), decisions=read(run/'effective_decisions.json', []),
         matches=read(run/'matched_list.json', []), scores=read(run/'evidence_scores.json'),
         correspondence=read(run/'correspondence_diagnostics.json'),
@@ -133,6 +174,8 @@ async def start_match(request):
     config['matching'].update(settings)
     config['matching'].setdefault('acceptance_mode', 'range_top1')
     prepared = read(run/'prepared.json')
+    if prepared.get('assets', {}).get('storyboard') and not prepared.get('panel_review_confirmed', False):
+        raise ValueError('Review and confirm the Storyboard panel extraction before matching')
     # Every match job writes into its own revision; earlier reviews are preserved.
     run = new_revision(prepared, config)
     config = load_config(run/'config.json')
@@ -142,6 +185,13 @@ async def start_match(request):
         retrieve(config, prepared, progress=progress)
         return run
     return task(execute)
+
+
+async def panel_review(request):
+    run = resolve_run(request.path_params['run_id'])
+    body = await request.json()
+    prepared = apply_panel_review(run, body['pages'])
+    return JSONResponse(dict(saved=True, panel_count=len(prepared['panels'])))
 
 
 async def start_provenance(request):
@@ -171,10 +221,14 @@ async def job_status(request):
 async def media(request):
     run = resolve_run(request.path_params['run_id'])
     prepared = read(run/'prepared.json')
-    paths = {str(Path(p['panel_path']).resolve()) for p in prepared['panels']}
-    paths.update(str(Path(f['keyframe_path']).resolve()) for rows in prepared['frames'].values() for f in rows)
+    manifest = read(run/'panel_manifest.json', {})
+    allowed = {str(Path(panel['panel_path']).resolve()) for panel in prepared['panels']}
+    allowed.update(str(Path(frame['keyframe_path']).resolve())
+                   for rows in prepared['frames'].values() for frame in rows)
+    for page in manifest.get('pages', []):
+        allowed.update(str(Path(page[key]).resolve()) for key in ('page_path', 'preview_path') if page.get(key))
     path = Path(request.query_params.get('path', '')).resolve()
-    if str(path) not in paths or not path.is_file():
+    if str(path) not in allowed or not path.is_file():
         return Response(status_code=404)
     with Image.open(path) as image:
         preview = image.convert('RGB')
@@ -227,10 +281,12 @@ async def handle_error(request, exc):
     return JSONResponse(dict(error=str(exc)), status_code=400)
 
 
-routes = [Route('/api/bootstrap', bootstrap), Route('/api/prepare', start_prepare, methods=['POST']),
+routes = [Route('/api/bootstrap', bootstrap), Route('/api/cache/clear', clear_cache, methods=['POST']),
+          Route('/api/prepare', start_prepare, methods=['POST']),
           Route('/api/upload/{role}', upload, methods=['POST']), Route('/api/choose-file', choose_file, methods=['POST']),
           Route('/api/jobs/{job_id}', job_status), Route('/api/runs/{run_id}', detail),
           Route('/api/runs/{run_id}/ranges', update_ranges, methods=['POST']),
+          Route('/api/runs/{run_id}/panel-review', panel_review, methods=['POST']),
           Route('/api/runs/{run_id}/match', start_match, methods=['POST']),
           Route('/api/runs/{run_id}/provenance', start_provenance, methods=['POST']),
           Route('/api/runs/{run_id}/reviews', review, methods=['POST']),

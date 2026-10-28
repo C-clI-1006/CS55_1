@@ -6,7 +6,7 @@ Updated 28 October 2026. This guide describes the implementation in this reposit
 
 The system compares sampled Final video frames with Storyboard panels and Animatic frames. It retrieves evidence globally, optionally reranks close visual candidates with available text, and compares selected relationships with submitter-declared correspondence ranges.
 
-Global Top-1 mode saves provisional selections automatically when minimum visual similarity is met. Human corrections are optional. Strict support checks are available for a more conservative selection policy. This repository version extracts Storyboard panels automatically without mandatory page-by-page approval; inspect the exported panel catalog for extraction mistakes.
+Global Top-1 mode saves provisional selections automatically when minimum visual similarity is met. Human corrections are optional. Strict support checks are available for a more conservative selection policy. Storyboard extraction produces candidate boxes. In Panel review, check every page, keep or exclude boxes, adjust boundaries and order, or add missing boxes. Confirm panel extraction before matching. Confirmation re-crops panels and refreshes their text and IDs; use the confirmed catalog when declaring correspondence.
 
 The team has used Lumia-generated materials in its own testing. Independent tests are welcome to identify failure cases beyond those tests. No accuracy improvement or reliable AI-forgery detection is claimed.
 
@@ -65,7 +65,7 @@ Open http://localhost:8505. Rebuild the frontend after pulling frontend changes 
 
 1. In Materials, select a Final video and at least one Storyboard PDF or Animatic video. For large files, use local paths on the server machine.
 2. Record sampling start, end and interval settings, then prepare the materials.
-3. Inspect the exported panel catalog and sample timestamps. Extraction mistakes should be reported separately from matching mistakes.
+3. If a Storyboard is submitted, complete Panel review and click Confirm panel extraction. Inspect the confirmed catalog and sample timestamps. Extraction mistakes should be reported separately from matching mistakes.
 4. Optionally declare expected evidence-to-Final intervals in Correspondence. Use original-video timestamps and exported panel IDs. Declarations are a comparison baseline, not verified ground truth or search restrictions.
 5. Run matching with recorded settings. Save automatic results before applying any human correction.
 6. Inspect Assessment and Provenance and download the JSON results.
@@ -96,6 +96,10 @@ Reordering an externally selected Final-frame list alone does not change this pi
 - Correspondence conformance measures agreement with submitted declarations. A disagreement can indicate an incorrect declaration or an incorrect match. Undeclared intervals are not evaluable for this metric.
 - Provenance indicators are independent checks of available evidence. Missing C2PA does not establish fabrication; a complete file hash does not establish authorship.
 - The Final is the reference for comparison. Its authenticity and the claimed production relationships are not assumed independently verified.
+
+## Generated cache
+
+The sidebar Clear cache action shows generated storage usage and asks for confirmation before removing generated runs, sampled frames, panels, uploaded copies and JSON results from outputs/. Download needed results first. It preserves source files referenced by local paths, dependencies and model weights, and is disabled during processing.
 
 ## Report a finding
 
